@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aram Seyya Virumbu Signup</title>
+<title>Aram Seyya Virumbu – Signup</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- Firebase SDK -->
@@ -19,10 +19,10 @@ body { background: linear-gradient(120deg,#1e3a8a,#0f172a); }
 <div class="max-w-6xl mx-auto">
 
 <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">
-Aram Seyya Virumbu – Rotaract Calendar
+Aram Seyya Virumbu – Rotaractor Calendar
 </h1>
 <p class="text-center mb-4 opacity-80">
-Rotaractors can book available dates. 
+Willing Rotaractors can book their dates.
 </p>
 
 <!-- ROLE SELECTION -->
@@ -110,7 +110,7 @@ let role = "applicant";
 /* -------- HOST USERS -------- */
 const hostUsers = {
   "Chairman": "Yunus",
-  "RACNC": "goldenjubilee"
+  "RACNC": "golden jubilee"
 };
 
 function openLogin() {
@@ -193,6 +193,22 @@ function generateCalendar() {
       const nameDiv = document.getElementById("name-" + key);
 
       if (data) {
+        const names = Object.values(data);
+        nameDiv.innerText = "Booked by: " + names.join(", ");
+        div.classList.remove("bg-green-500");
+        div.classList.add("bg-yellow-500");
+        // Still allow more members to add their names
+        div.onclick = () => openModal(key, formatDate(d));
+      } else {
+        nameDiv.innerText = "Available";
+        div.classList.remove("bg-red-600", "bg-yellow-500");
+        div.classList.add("bg-green-500");
+        div.onclick = () => openModal(key, formatDate(d));
+      }
+    });
+      const nameDiv = document.getElementById("name-" + key);
+
+      if (data) {
         nameDiv.innerText = "Booked by " + data;
         div.classList.remove("bg-green-500");
         div.classList.add("bg-red-600");
@@ -221,7 +237,31 @@ function saveBooking() {
   const name = document.getElementById("nameInput").value.trim();
   if (!name) return alert("Enter name");
 
-  db.ref("bookings/" + chosenDateKey).set(name);
+  function editBooking(dateKey) {
+db.ref("bookings/" + dateKey).once("value", snap => {
+const data = snap.val();
+if (!data) return alert("No bookings for this date");
+
+
+// Convert to array of {id, name}
+const entries = Object.entries(data);
+let listStr = entries.map((e, i) => `${i+1}. ${e[1]}`).join('\n');
+
+
+const toEdit = prompt(`Current bookings:\n${listStr}\n\nEnter the number of the person to remove:`);
+const index = parseInt(toEdit) - 1;
+if (isNaN(index) || index < 0 || index >= entries.length) return alert("Invalid selection");
+
+
+const keyToRemove = entries[index][0];
+db.ref(`bookings/${dateKey}/${keyToRemove}`).remove();
+alert("Booking removed.");
+});
+}
+
+  // Allow multiple volunteers per date
+  db.ref("bookings/" + chosenDateKey).push(name);
+
   closeModal();
   document.getElementById("nameInput").value = "";
 }
@@ -231,4 +271,3 @@ generateCalendar();
 
 </body>
 </html>
-
