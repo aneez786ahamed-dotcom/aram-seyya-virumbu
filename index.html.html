@@ -206,6 +206,28 @@ function generateCalendar() {
     div.onclick = () => openModal(key, formatDate(d));
   }
 });
+
+// Check if beneficiaries already entered
+db.ref("beneficiaries/" + key).on("value", benSnap => {
+  const ben = benSnap.val();
+
+  if (ben) {
+    nameDiv.innerHTML += `<div class="text-xs mt-1">Beneficiaries: ${ben}</div>`;
+  } else {
+    const today = new Date().toISOString().split("T")[0];
+
+    // Allow entry only AFTER the date is over
+    if (key < today) {
+      nameDiv.innerHTML += `
+        <button 
+          onclick="addBeneficiaries('${key}')"
+          class="text-xs mt-1 underline">
+          Add Beneficiaries
+        </button>`;
+    }
+  }
+});
+    
   }
 }
 
@@ -230,9 +252,20 @@ function saveBooking() {
   document.getElementById("nameInput").value = "";
 }
 
+  function addBeneficiaries(dateKey) {
+  const count = prompt("Enter number of beneficiaries served:");
+  if (!count || isNaN(count) || count <= 0) {
+    return alert("Enter a valid number");
+  }
+
+  db.ref("beneficiaries/" + dateKey).set(parseInt(count));
+}
+
+  
 generateCalendar();
 </script>
 
 </body>
 </html>
+
 
