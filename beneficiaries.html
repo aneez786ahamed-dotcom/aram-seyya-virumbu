@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8" />
+<title>Beneficiaries Entry</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+</head>
+
+<body class="min-h-screen bg-slate-900 text-white p-6">
+
+<h1 class="text-2xl font-bold text-center mb-6">
+Beneficiaries Entry Portal
+</h1>
+
+<div id="list" class="space-y-4 max-w-3xl mx-auto"></div>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCLFtdO8MUbdcRnT65MtIjCHlIG6PEnf4U",
+  authDomain: "aram-seyya-virumbu.firebaseapp.com",
+  databaseURL: "https://aram-seyya-virumbu-default-rtdb.firebaseio.com",
+  projectId: "aram-seyya-virumbu",
+  storageBucket: "aram-seyya-virumbu.firebasestorage.app",
+  messagingSenderId: "247088172059",
+  appId: "1:247088172059:web:7e27121fb6d4a9e7c2fcbe",
+  measurementId: "G-8EMEPD5WGZ"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+const today = new Date().toISOString().split("T")[0];
+
+db.ref("bookings").once("value", snap => {
+  const bookings = snap.val();
+  if (!bookings) return;
+
+  Object.keys(bookings).forEach(dateKey => {
+    // Show only completed dates
+    if (dateKey >= today) return;
+
+    const names = Object.values(bookings[dateKey]).join(", ");
+
+    const div = document.createElement("div");
+    div.className = "bg-white/10 p-4 rounded-xl";
+
+    div.innerHTML = `
+      <div class="font-semibold">${dateKey}</div>
+      <div class="text-sm opacity-80 mb-2">
+        Donated by: ${names}
+      </div>
+
+      <input
+        type="number"
+        id="ben-${dateKey}"
+        placeholder="No. of Beneficiaries"
+        class="text-black p-2 rounded w-full mb-2"
+      />
+
+      <button
+        onclick="saveBen('${dateKey}')"
+        class="bg-green-600 px-3 py-1 rounded w-full">
+        Save
+      </button>
+    `;
+
+    // Check if already entered
+    db.ref("beneficiaries/" + dateKey).once("value", benSnap => {
+      if (benSnap.exists()) {
+        div.innerHTML += `
+          <div class="mt-2 text-green-400">
+            Beneficiaries: ${benSnap.val()}
+          </div>`;
+      }
+    });
+
+    document.getElementById("list").appendChild(div);
+  });
+});
+
+function saveBen(dateKey) {
+  const val = document.getElementById("ben-" + dateKey).value;
+  if (!val || val <= 0) return alert("Enter valid number");
+
+  db.ref("beneficiaries/" + dateKey).set(parseInt(val));
+  alert("Saved successfully");
+  location.reload();
+}
+</script>
+
+</body>
+</html>
