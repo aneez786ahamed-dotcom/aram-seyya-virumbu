@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
-  
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,13 +9,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
-
 <style>
 body { background: linear-gradient(120deg,#1e3a8a,#020617); }
 </style>
 </head>
 
 <body class="min-h-screen text-white p-6">
+
 <!-- ================= LOGIN ================= -->
 <div id="loginBox" class="max-w-sm mx-auto bg-white/10 p-4 rounded-xl">
   <h2 class="text-xl font-bold text-center mb-3">Login</h2>
@@ -91,22 +90,17 @@ body { background: linear-gradient(120deg,#1e3a8a,#020617); }
 <script>
 /* ================= FIREBASE CONFIG ================= */
 const firebaseConfig = {
-  apiKey: "AIzaSyCLFtdO8MUbdcRnT65MtIjCHlIG6PEnf4U",
-  authDomain: "aram-seyya-virumbu.firebaseapp.com",
-  databaseURL: "https://aram-seyya-virumbu-default-rtdb.firebaseio.com",
-  projectId: "aram-seyya-virumbu",
-  storageBucket: "aram-seyya-virumbu.firebasestorage.app",
-  messagingSenderId: "247088172059",
-  appId: "1:247088172059:web:7e27121fb6d4a9e7c2fcbe",
-  measurementId: "G-8EMEPD5WGZ"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_DOMAIN",
+  databaseURL: "YOUR_DB_URL",
+  projectId: "YOUR_PROJECT_ID",
 };
-  
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
 /* ================= LOGIN LOGIC ================= */
 let CURRENT_ROLE = null;
-let CURRENT_USER = null;
+
 const HOST_USERS = [
   { user: "Chairman", pass: "Yunus" },
   { user: "RACNC", pass: "golden jubilee" }
@@ -116,8 +110,6 @@ function login() {
   const role = document.getElementById("role").value;
   const u = username.value.trim();
   const p = password.value.trim();
-  CURRENT_ROLE = role;
-  CURRENT_USER = u;   // store username
 
   if (!role || !u || !p) return alert("Fill all fields");
 
@@ -186,12 +178,7 @@ function closeModal() {
 function saveBooking() {
   const name = nameInput.value.trim();
   if (!name) return alert("Enter name");
-
-  db.ref("bookings/" + chosenDateKey).set({
-    name: name,
-    user: CURRENT_USER
-  });
-
+  db.ref("bookings/" + chosenDateKey).push(name);
   nameInput.value = "";
   closeModal();
 }
@@ -202,29 +189,17 @@ function loadBeneficiaries() {
   beneficiaryList.innerHTML = "";
 
   db.ref("bookings").once("value", snap => {
-    const bookings = snap.val();
-    if (!bookings) return;
+    const data = snap.val();
+    if (!data) return;
 
-    Object.keys(bookings).forEach(dateKey => {
+    Object.keys(data).forEach(dateKey => {
       if (dateKey >= today) return;
-
-      const booking = bookings[dateKey];
-
-      // access control
-      if (
-        CURRENT_ROLE === "volunteer" &&
-        booking.user !== CURRENT_USER
-      ) {
-        return;
-      }
 
       const div = document.createElement("div");
       div.className = "bg-white/10 p-3 rounded";
 
       div.innerHTML = `
-        <div class="text-sm font-semibold">
-          ${dateKey} – ${booking.name}
-        </div>
+        <div class="text-sm">${dateKey}</div>
         <input id="ben-${dateKey}" type="number"
           class="text-black w-full p-1 rounded mb-1"
           placeholder="No. of beneficiaries">
@@ -233,7 +208,6 @@ function loadBeneficiaries() {
           Save
         </button>
       `;
-
       beneficiaryList.appendChild(div);
     });
   });
@@ -256,6 +230,3 @@ function clearAllBookings() {
 
 </body>
 </html>
-
-
-
