@@ -237,27 +237,7 @@ function saveBooking() {
   const name = document.getElementById("nameInput").value.trim();
   if (!name) return alert("Enter name");
 
-  function editBooking(dateKey) {
-db.ref("bookings/" + dateKey).once("value", snap => {
-const data = snap.val();
-if (!data) return alert("No bookings for this date");
-
-
-// Convert to array of {id, name}
-const entries = Object.entries(data);
-let listStr = entries.map((e, i) => `${i+1}. ${e[1]}`).join('\n');
-
-
-const toEdit = prompt(`Current bookings:\n${listStr}\n\nEnter the number of the person to remove:`);
-const index = parseInt(toEdit) - 1;
-if (isNaN(index) || index < 0 || index >= entries.length) return alert("Invalid selection");
-
-
-const keyToRemove = entries[index][0];
-db.ref(`bookings/${dateKey}/${keyToRemove}`).remove();
-alert("Booking removed.");
-});
-}
+  
 
   // Allow multiple volunteers per date
   db.ref("bookings/" + chosenDateKey).push(name);
@@ -271,3 +251,4 @@ generateCalendar();
 
 </body>
 </html>
+
