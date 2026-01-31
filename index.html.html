@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Aram Seyya Virumbu – Signup</title>
+<title>Aram Seyya Virumbu – 30-Day Signup</title>
 <script src="https://cdn.tailwindcss.com"></script>
 
 <!-- Firebase SDK -->
@@ -19,16 +19,16 @@ body { background: linear-gradient(120deg,#1e3a8a,#0f172a); }
 <div class="max-w-6xl mx-auto">
 
 <h1 class="text-3xl md:text-4xl font-bold text-center mb-2">
-Aram Seyya Virumbu – Rotaractor Calendar
+Aram Seyya Virumbu - Volunteer Calendar
 </h1>
 <p class="text-center mb-4 opacity-80">
-Willing Rotaractors can book their dates.
+Rotaractors can book their available dates.
 </p>
 
 <!-- ROLE SELECTION -->
 <div class="flex justify-center gap-4 mb-6">
-<button onclick="setRole('applicant')" class="bg-green-600 px-4 py-2 rounded">Volunteer View</button>
-<button onclick="openLogin()" class="bg-yellow-600 px-4 py-2 rounded">Host Panel</button>
+<button onclick="setRole('applicant')" class="bg-green-600 px-4 py-2 rounded">Volunteer Portal</button>
+<button onclick="openLogin()" class="bg-yellow-600 px-4 py-2 rounded">Chairman Portal</button>
 </div>
 
 <!-- HOST SETTINGS -->
@@ -85,7 +85,8 @@ Willing Rotaractors can book their dates.
 </div>
 
 <script>
-/* ---------------- CONFIG ---------------- */
+
+
 const firebaseConfig = {
   apiKey: "AIzaSyCLFtdO8MUbdcRnT65MtIjCHlIG6PEnf4U",
   authDomain: "aram-seyya-virumbu.firebaseapp.com",
@@ -100,17 +101,15 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* -------- SETTINGS -------- */
-// Ramadan 2026 start
+
 let projectStart = new Date("2026-02-17");
 let totalDays = 30;
 let chosenDateKey = null;
 let role = "applicant";
 
-/* -------- HOST USERS -------- */
 const hostUsers = {
   "Chairman": "Yunus",
-  "RACNC": "golden jubilee"
+  "RACNC": "goldenjubilee"
 };
 
 function openLogin() {
@@ -193,22 +192,6 @@ function generateCalendar() {
       const nameDiv = document.getElementById("name-" + key);
 
       if (data) {
-        const names = Object.values(data);
-        nameDiv.innerText = "Booked by: " + names.join(", ");
-        div.classList.remove("bg-green-500");
-        div.classList.add("bg-yellow-500");
-        // Still allow more members to add their names
-        div.onclick = () => openModal(key, formatDate(d));
-      } else {
-        nameDiv.innerText = "Available";
-        div.classList.remove("bg-red-600", "bg-yellow-500");
-        div.classList.add("bg-green-500");
-        div.onclick = () => openModal(key, formatDate(d));
-      }
-    });
-      const nameDiv = document.getElementById("name-" + key);
-
-      if (data) {
         nameDiv.innerText = "Booked by " + data;
         div.classList.remove("bg-green-500");
         div.classList.add("bg-red-600");
@@ -237,11 +220,7 @@ function saveBooking() {
   const name = document.getElementById("nameInput").value.trim();
   if (!name) return alert("Enter name");
 
-  
-
-  // Allow multiple volunteers per date
-  db.ref("bookings/" + chosenDateKey).push(name);
-
+  db.ref("bookings/" + chosenDateKey).set(name);
   closeModal();
   document.getElementById("nameInput").value = "";
 }
@@ -251,4 +230,3 @@ generateCalendar();
 
 </body>
 </html>
-
