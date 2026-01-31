@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aram Seyya Virumbu – 30-Day Signup</title>
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+
+<style>
+body { background: linear-gradient(120deg,#1e3a8a,#0f172a); }
+</style>
+</head>
+
+<body class="min-h-screen text-white p-6">
+<div class="max-w-6xl mx-auto">
+
+<h1 class="text-3xl md:text-4xl font-bold text-center mb-2">
+Aram Seyya Virumbu – Volunteer Calendar
+</h1>
+<p class="text-center mb-4 opacity-80">
+Volunteers can book available dates. Hosts can manage schedule.
+</p>
+
+<!-- ROLE SELECTION -->
+<div class="flex justify-center gap-4 mb-6">
+<button onclick="setRole('applicant')" class="bg-green-600 px-4 py-2 rounded">Volunteer View</button>
+<button onclick="openLogin()" class="bg-yellow-600 px-4 py-2 rounded">Host Panel</button>
+</div>
+
+<!-- HOST SETTINGS -->
+<div id="hostPanel" class="hidden bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-6">
+<h2 class="font-bold mb-2">Host Controls</h2>
+
+<label>Project Start Date</label>
+<input type="date" id="startDateInput" class="text-black p-2 rounded w-full mb-3">
+
+<label>Total Project Days</label>
+<input type="number" id="totalDaysInput" class="text-black p-2 rounded w-full mb-3" value="30">
+
+<button onclick="updateProjectSettings()" class="bg-blue-600 px-4 py-2 rounded w-full">Update Calendar</button>
+
+<hr class="my-4 opacity-30">
+
+<h3 class="font-semibold mb-2">Clear One Booking</h3>
+<label>Select Date to Clear</label>
+<input type="date" id="clearDateInput" class="text-black p-2 rounded w-full mb-3">
+
+<button onclick="clearSingleBooking()" class="bg-orange-600 px-4 py-2 rounded w-full">Clear Selected Date</button>
+
+<button onclick="clearAllBookings()" class="bg-red-600 px-4 py-2 rounded w-full mt-3">Clear All Bookings</button>
+</div>
+
+<div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 shadow-xl">
+<div id="calendar" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+</div>
+
+</div>
+
+<!-- Booking Modal -->
+<div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
+<div class="bg-white text-black rounded-xl p-6 w-80 shadow-xl">
+<h2 class="text-xl font-bold mb-3">Book Date</h2>
+<p id="selectedDate" class="mb-3"></p>
+<input id="nameInput" placeholder="Enter your name" class="border w-full p-2 rounded mb-3" />
+<button onclick="saveBooking()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Confirm Booking</button>
+<button onclick="closeModal()" class="mt-2 text-sm text-gray-500 w-full">Cancel</button>
+</div>
+</div>
+
+<!-- HOST LOGIN MODAL -->
+<div id="loginModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
+<div class="bg-white text-black rounded-xl p-6 w-80 shadow-xl">
+<h2 class="text-xl font-bold mb-3">Host Login</h2>
+
+<input id="loginUser" placeholder="Username" class="border w-full p-2 rounded mb-3" />
+<input id="loginPass" type="password" placeholder="Password" class="border w-full p-2 rounded mb-3" />
+
+<button onclick="checkLogin()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Login</button>
+<button onclick="closeLogin()" class="mt-2 text-sm text-gray-500 w-full">Cancel</button>
+</div>
+</div>
+
+<script>
+/* ---------------- CONFIG ---------------- */
+const firebaseConfig = {
+  apiKey: "AIzaSyCLFtdO8MUbdcRnT65MtIjCHlIG6PEnf4U",
+  authDomain: "aram-seyya-virumbu.firebaseapp.com",
+  databaseURL: "https://aram-seyya-virumbu-default-rtdb.firebaseio.com",
+  projectId: "aram-seyya-virumbu",
+  storageBucket: "aram-seyya-virumbu.firebasestorage.app",
+  messagingSenderId: "247088172059",
+  appId: "1:247088172059:web:7e27121fb6d4a9e7c2fcbe",
+  measurementId: "G-8EMEPD5WGZ"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+/* -------- SETTINGS -------- */
+// Ramadan 2026 start
+let projectStart = new Date("2026-02-17");
+let totalDays = 30;
+let chosenDateKey = null;
+let role = "applicant";
+
+/* -------- HOST USERS -------- */
+const hostUsers = {
+  "Chairman": "Yunus",
+  "RACNC": "goldenjubilee"
+};
+
+function openLogin() {
+  document.getElementById("loginModal").classList.remove("hidden");
+}
+
+function closeLogin() {
+  document.getElementById("loginModal").classList.add("hidden");
+}
+
+function checkLogin() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+
+  if (hostUsers[user] && hostUsers[user] === pass) {
+    setRole("host");
+    closeLogin();
+  } else {
+    alert("Invalid login details");
+  }
+}
+
+function setRole(r) {
+  role = r;
+  document.getElementById("hostPanel").classList.toggle("hidden", r !== "host");
+}
+
+function updateProjectSettings() {
+  const startInput = document.getElementById("startDateInput").value;
+  const daysInput = document.getElementById("totalDaysInput").value;
+
+  if (startInput) projectStart = new Date(startInput);
+  if (daysInput) totalDays = parseInt(daysInput);
+
+  generateCalendar();
+}
+
+function clearAllBookings() {
+  if (confirm("Delete all bookings?")) {
+    db.ref("bookings").remove();
+  }
+}
+
+function clearSingleBooking() {
+  const dateValue = document.getElementById("clearDateInput").value;
+  if (!dateValue) return alert("Select a date first");
+
+  if (confirm("Clear booking for selected date?")) {
+    db.ref("bookings/" + dateValue).remove();
+  }
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
+
+function generateCalendar() {
+  const calendar = document.getElementById("calendar");
+  calendar.innerHTML = "";
+
+  for (let i = 0; i < totalDays; i++) {
+    let d = new Date(projectStart);
+    d.setDate(d.getDate() + i);
+
+    const key = d.toISOString().split('T')[0];
+
+    const div = document.createElement("div");
+    div.className = "p-3 rounded-xl text-center font-semibold shadow";
+
+    div.innerHTML = formatDate(d) + "<div class='text-sm mt-1' id='name-" + key + "'>Checking...</div>";
+
+    calendar.appendChild(div);
+
+    db.ref("bookings/" + key).on("value", snap => {
+      const data = snap.val();
+      const nameDiv = document.getElementById("name-" + key);
+
+      if (data) {
+        nameDiv.innerText = "Booked by " + data;
+        div.classList.remove("bg-green-500");
+        div.classList.add("bg-red-600");
+        div.onclick = null;
+      } else {
+        nameDiv.innerText = "Available";
+        div.classList.remove("bg-red-600");
+        div.classList.add("bg-green-500");
+        div.onclick = () => openModal(key, formatDate(d));
+      }
+    });
+  }
+}
+
+function openModal(key, label) {
+  chosenDateKey = key;
+  document.getElementById("selectedDate").innerText = label;
+  document.getElementById("modal").classList.remove("hidden");
+}
+
+function closeModal() {
+  document.getElementById("modal").classList.add("hidden");
+}
+
+function saveBooking() {
+  const name = document.getElementById("nameInput").value.trim();
+  if (!name) return alert("Enter name");
+
+  db.ref("bookings/" + chosenDateKey).set(name);
+  closeModal();
+  document.getElementById("nameInput").value = "";
+}
+
+generateCalendar();
+</script>
+
+</body>
+</html>
