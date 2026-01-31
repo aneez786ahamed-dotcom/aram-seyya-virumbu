@@ -1,165 +1,206 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Aram Seyya Virumbu – Ramadan 2026</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Aram Seyya Virumbu – 30-Day Signup</title>
 <script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Firebase SDK -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 
 <style>
-body { background: linear-gradient(120deg,#1e3a8a,#020617); }
+body { background: linear-gradient(120deg,#1e3a8a,#0f172a); }
 </style>
 </head>
 
 <body class="min-h-screen text-white p-6">
+<div class="max-w-6xl mx-auto">
 
-<!-- ================= LOGIN ================= -->
-<div id="loginBox" class="max-w-sm mx-auto bg-white/10 p-4 rounded-xl">
-  <h2 class="text-xl font-bold text-center mb-3">Login</h2>
+<h1 class="text-3xl md:text-4xl font-bold text-center mb-2">
+Aram Seyya Virumbu - Volunteer Calendar
+</h1>
+<p class="text-center mb-4 opacity-80">
+Rotaractors can book their available dates.
+</p>
 
-  <select id="role" class="w-full p-2 text-black rounded mb-2">
-    <option value="">Select Role</option>
-    <option value="volunteer">Volunteer</option>
-    <option value="host">Host</option>
-  </select>
-
-  <input id="username" placeholder="Username"
-    class="w-full p-2 rounded text-black mb-2" />
-
-  <input id="password" type="password" placeholder="Password"
-    class="w-full p-2 rounded text-black mb-3" />
-
-  <button onclick="login()"
-    class="bg-blue-600 w-full py-2 rounded font-semibold">
-    Enter
-  </button>
+<!-- ROLE SELECTION -->
+<div class="flex justify-center gap-4 mb-6">
+<button onclick="setRole('applicant')" class="bg-green-600 px-4 py-2 rounded">Volunteer Portal</button>
+<button onclick="openLogin()" class="bg-yellow-600 px-4 py-2 rounded">Chairman Portal</button>
 </div>
 
-<!-- ================= VOLUNTEER PORTAL ================= -->
-<div id="volunteerPortal" class="hidden max-w-6xl mx-auto">
+<!-- HOST SETTINGS -->
+<div id="hostPanel" class="hidden bg-white/10 backdrop-blur-md rounded-2xl p-4 mb-6">
+<h2 class="font-bold mb-2">Host Controls</h2>
 
-  <h1 class="text-3xl font-bold text-center mb-4">
-    Aram Seyya Virumbu – Ramadan 2026
-  </h1>
+<label>Project Start Date</label>
+<input type="date" id="startDateInput" class="text-black p-2 rounded w-full mb-3">
 
-  <!-- CALENDAR -->
-  <div class="bg-white/10 rounded-xl p-4 mb-6">
-    <h2 class="text-xl font-semibold mb-3">Book a Date</h2>
-    <div id="calendar" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
-  </div>
+<label>Total Project Days</label>
+<input type="number" id="totalDaysInput" class="text-black p-2 rounded w-full mb-3" value="30">
 
-  <!-- BENEFICIARIES -->
-  <div class="bg-white/10 rounded-xl p-4">
-    <h2 class="text-xl font-semibold mb-3">
-      Enter Beneficiaries (Completed Days)
-    </h2>
-    <div id="beneficiaryList" class="space-y-2"></div>
-  </div>
+<button onclick="updateProjectSettings()" class="bg-blue-600 px-4 py-2 rounded w-full">Update Calendar</button>
+
+<hr class="my-4 opacity-30">
+
+<h3 class="font-semibold mb-2">Clear One Booking</h3>
+<label>Select Date to Clear</label>
+<input type="date" id="clearDateInput" class="text-black p-2 rounded w-full mb-3">
+
+<button onclick="clearSingleBooking()" class="bg-orange-600 px-4 py-2 rounded w-full">Clear Selected Date</button>
+
+<button onclick="clearAllBookings()" class="bg-red-600 px-4 py-2 rounded w-full mt-3">Clear All Bookings</button>
+</div>
+
+<div class="bg-white/10 backdrop-blur-md rounded-2xl p-4 shadow-xl">
+<div id="calendar" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div>
+</div>
 
 </div>
 
-<!-- ================= HOST PORTAL ================= -->
-<div id="hostPortal" class="hidden max-w-4xl mx-auto mt-6">
-  <h2 class="text-2xl font-bold mb-3">Host Controls</h2>
-  <button onclick="clearAllBookings()"
-    class="bg-red-600 px-4 py-2 rounded">
-    Clear All Bookings
-  </button>
-</div>
-
-<!-- ================= MODAL ================= -->
+<!-- Booking Modal -->
 <div id="modal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
-  <div class="bg-white text-black rounded-xl p-6 w-80">
-    <h3 class="text-lg font-bold mb-2">Add Your Name</h3>
-    <p id="selectedDate" class="mb-2"></p>
-    <input id="nameInput"
-      class="border w-full p-2 rounded mb-3"
-      placeholder="Your Name" />
-    <button onclick="saveBooking()"
-      class="bg-blue-600 text-white w-full py-2 rounded">
-      Confirm
-    </button>
-    <button onclick="closeModal()"
-      class="text-sm mt-2 w-full">Cancel</button>
-  </div>
+<div class="bg-white text-black rounded-xl p-6 w-80 shadow-xl">
+<h2 class="text-xl font-bold mb-3">Book Date</h2>
+<p id="selectedDate" class="mb-3"></p>
+<input id="nameInput" placeholder="Enter your name" class="border w-full p-2 rounded mb-3" />
+<button onclick="saveBooking()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Confirm Booking</button>
+<button onclick="closeModal()" class="mt-2 text-sm text-gray-500 w-full">Cancel</button>
+</div>
+</div>
+
+<!-- HOST LOGIN MODAL -->
+<div id="loginModal" class="hidden fixed inset-0 bg-black/60 flex items-center justify-center">
+<div class="bg-white text-black rounded-xl p-6 w-80 shadow-xl">
+<h2 class="text-xl font-bold mb-3">Host Login</h2>
+
+<input id="loginUser" placeholder="Username" class="border w-full p-2 rounded mb-3" />
+<input id="loginPass" type="password" placeholder="Password" class="border w-full p-2 rounded mb-3" />
+
+<button onclick="checkLogin()" class="bg-blue-600 text-white px-4 py-2 rounded w-full">Login</button>
+<button onclick="closeLogin()" class="mt-2 text-sm text-gray-500 w-full">Cancel</button>
+</div>
 </div>
 
 <script>
-/* ================= FIREBASE CONFIG ================= */
+
+
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_DOMAIN",
-  databaseURL: "YOUR_DB_URL",
-  projectId: "YOUR_PROJECT_ID",
+  apiKey: "AIzaSyCLFtdO8MUbdcRnT65MtIjCHlIG6PEnf4U",
+  authDomain: "aram-seyya-virumbu.firebaseapp.com",
+  databaseURL: "https://aram-seyya-virumbu-default-rtdb.firebaseio.com",
+  projectId: "aram-seyya-virumbu",
+  storageBucket: "aram-seyya-virumbu.firebasestorage.app",
+  messagingSenderId: "247088172059",
+  appId: "1:247088172059:web:7e27121fb6d4a9e7c2fcbe",
+  measurementId: "G-8EMEPD5WGZ"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-/* ================= LOGIN LOGIC ================= */
-let CURRENT_ROLE = null;
 
-const HOST_USERS = [
-  { user: "Chairman", pass: "Yunus" },
-  { user: "RACNC", pass: "golden jubilee" }
-];
+let projectStart = new Date("2026-02-17");
+let totalDays = 30;
+let chosenDateKey = null;
+let role = "applicant";
 
-function login() {
-  const role = document.getElementById("role").value;
-  const u = username.value.trim();
-  const p = password.value.trim();
+const hostUsers = {
+  "Chairman": "Yunus",
+  "RACNC": "goldenjubilee"
+};
 
-  if (!role || !u || !p) return alert("Fill all fields");
-
-  if (role === "host") {
-    const ok = HOST_USERS.some(h => h.user === u && h.pass === p);
-    if (!ok) return alert("Invalid host login");
-    CURRENT_ROLE = "host";
-  } else {
-    CURRENT_ROLE = "volunteer";
-  }
-
-  loginBox.style.display = "none";
-  volunteerPortal.classList.remove("hidden");
-  if (CURRENT_ROLE === "host") hostPortal.classList.remove("hidden");
-
-  generateCalendar();
-  loadBeneficiaries();
+function openLogin() {
+  document.getElementById("loginModal").classList.remove("hidden");
 }
 
-/* ================= CALENDAR ================= */
-const startDate = new Date("2026-02-17");
-const totalDays = 30;
-let chosenDateKey = null;
+function closeLogin() {
+  document.getElementById("loginModal").classList.add("hidden");
+}
+
+function checkLogin() {
+  const user = document.getElementById("loginUser").value.trim();
+  const pass = document.getElementById("loginPass").value.trim();
+
+  if (hostUsers[user] && hostUsers[user] === pass) {
+    setRole("host");
+    closeLogin();
+  } else {
+    alert("Invalid login details");
+  }
+}
+
+function setRole(r) {
+  role = r;
+  document.getElementById("hostPanel").classList.toggle("hidden", r !== "host");
+}
+
+function updateProjectSettings() {
+  const startInput = document.getElementById("startDateInput").value;
+  const daysInput = document.getElementById("totalDaysInput").value;
+
+  if (startInput) projectStart = new Date(startInput);
+  if (daysInput) totalDays = parseInt(daysInput);
+
+  generateCalendar();
+}
+
+function clearAllBookings() {
+  if (confirm("Delete all bookings?")) {
+    db.ref("bookings").remove();
+  }
+}
+
+function clearSingleBooking() {
+  const dateValue = document.getElementById("clearDateInput").value;
+  if (!dateValue) return alert("Select a date first");
+
+  if (confirm("Clear booking for selected date?")) {
+    db.ref("bookings/" + dateValue).remove();
+  }
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric"
+  });
+}
 
 function generateCalendar() {
+  const calendar = document.getElementById("calendar");
   calendar.innerHTML = "";
 
   for (let i = 0; i < totalDays; i++) {
-    const d = new Date(startDate);
+    let d = new Date(projectStart);
     d.setDate(d.getDate() + i);
-    const key = d.toISOString().split("T")[0];
 
-    const box = document.createElement("div");
-    box.className = "p-3 rounded-xl text-center cursor-pointer bg-green-500";
-    box.innerHTML = `
-      ${d.toDateString()}
-      <div class="text-xs mt-1" id="name-${key}">Available</div>
-    `;
+    const key = d.toISOString().split('T')[0];
 
-    box.onclick = () => openModal(key, d.toDateString());
-    calendar.appendChild(box);
+    const div = document.createElement("div");
+    div.className = "p-3 rounded-xl text-center font-semibold shadow";
+
+    div.innerHTML = formatDate(d) + "<div class='text-sm mt-1' id='name-" + key + "'>Checking...</div>";
+
+    calendar.appendChild(div);
 
     db.ref("bookings/" + key).on("value", snap => {
       const data = snap.val();
       const nameDiv = document.getElementById("name-" + key);
 
       if (data) {
-        const names = Object.values(data);
-        nameDiv.innerText = "By: " + names.join(", ");
-        box.classList.replace("bg-green-500", "bg-yellow-500");
+        nameDiv.innerText = "Booked by " + data;
+        div.classList.remove("bg-green-500");
+        div.classList.add("bg-red-600");
+        div.onclick = null;
+      } else {
+        nameDiv.innerText = "Available";
+        div.classList.remove("bg-red-600");
+        div.classList.add("bg-green-500");
+        div.onclick = () => openModal(key, formatDate(d));
       }
     });
   }
@@ -167,65 +208,24 @@ function generateCalendar() {
 
 function openModal(key, label) {
   chosenDateKey = key;
-  selectedDate.innerText = label;
-  modal.classList.remove("hidden");
+  document.getElementById("selectedDate").innerText = label;
+  document.getElementById("modal").classList.remove("hidden");
 }
 
 function closeModal() {
-  modal.classList.add("hidden");
+  document.getElementById("modal").classList.add("hidden");
 }
 
 function saveBooking() {
-  const name = nameInput.value.trim();
+  const name = document.getElementById("nameInput").value.trim();
   if (!name) return alert("Enter name");
-  db.ref("bookings/" + chosenDateKey).push(name);
-  nameInput.value = "";
+
+  db.ref("bookings/" + chosenDateKey).set(name);
   closeModal();
+  document.getElementById("nameInput").value = "";
 }
 
-/* ================= BENEFICIARIES ================= */
-function loadBeneficiaries() {
-  const today = new Date().toISOString().split("T")[0];
-  beneficiaryList.innerHTML = "";
-
-  db.ref("bookings").once("value", snap => {
-    const data = snap.val();
-    if (!data) return;
-
-    Object.keys(data).forEach(dateKey => {
-      if (dateKey >= today) return;
-
-      const div = document.createElement("div");
-      div.className = "bg-white/10 p-3 rounded";
-
-      div.innerHTML = `
-        <div class="text-sm">${dateKey}</div>
-        <input id="ben-${dateKey}" type="number"
-          class="text-black w-full p-1 rounded mb-1"
-          placeholder="No. of beneficiaries">
-        <button onclick="saveBen('${dateKey}')"
-          class="bg-green-600 w-full py-1 rounded">
-          Save
-        </button>
-      `;
-      beneficiaryList.appendChild(div);
-    });
-  });
-}
-
-function saveBen(dateKey) {
-  const v = document.getElementById("ben-" + dateKey).value;
-  if (!v || v <= 0) return alert("Enter valid number");
-  db.ref("beneficiaries/" + dateKey).set(parseInt(v));
-  alert("Saved");
-}
-
-/* ================= HOST ================= */
-function clearAllBookings() {
-  if (!confirm("Clear all bookings?")) return;
-  db.ref("bookings").remove();
-  location.reload();
-}
+generateCalendar();
 </script>
 
 </body>
