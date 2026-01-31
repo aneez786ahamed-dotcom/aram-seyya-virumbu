@@ -188,21 +188,24 @@ function generateCalendar() {
     calendar.appendChild(div);
 
     db.ref("bookings/" + key).on("value", snap => {
-      const data = snap.val();
-      const nameDiv = document.getElementById("name-" + key);
+  const data = snap.val();
+  const nameDiv = document.getElementById("name-" + key);
 
-      if (data) {
-        nameDiv.innerText = "Booked by " + data;
-        div.classList.remove("bg-green-500");
-        div.classList.add("bg-red-600");
-        div.onclick = null;
-      } else {
-        nameDiv.innerText = "Available";
-        div.classList.remove("bg-red-600");
-        div.classList.add("bg-green-500");
-        div.onclick = () => openModal(key, formatDate(d));
-      }
-    });
+  if (data) {
+    const names = Object.values(data);
+    nameDiv.innerText = "Booked by: " + names.join(", ");
+    div.classList.remove("bg-green-500");
+    div.classList.add("bg-yellow-500");
+
+    // STILL allow others to add names
+    div.onclick = () => openModal(key, formatDate(d));
+  } else {
+    nameDiv.innerText = "Available";
+    div.classList.remove("bg-yellow-500");
+    div.classList.add("bg-green-500");
+    div.onclick = () => openModal(key, formatDate(d));
+  }
+});
   }
 }
 
@@ -220,7 +223,9 @@ function saveBooking() {
   const name = document.getElementById("nameInput").value.trim();
   if (!name) return alert("Enter name");
 
-  db.ref("bookings/" + chosenDateKey).set(name);
+  // ADD name without removing existing ones
+  db.ref("bookings/" + chosenDateKey).push(name);
+
   closeModal();
   document.getElementById("nameInput").value = "";
 }
@@ -230,3 +235,4 @@ generateCalendar();
 
 </body>
 </html>
+
